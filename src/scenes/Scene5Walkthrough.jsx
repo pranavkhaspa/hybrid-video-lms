@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle2, XCircle } from 'lucide-react';
 import { audioEngineInstance } from '../components/AudioEngine';
 
 const codeToType = `import React from 'react';
@@ -19,7 +20,6 @@ export const CourseCard = ({ title, desc }) => {
   );
 };`;
 
-// Simple syntax highlighter helper
 const highlightJSXLine = (line) => {
   if (!line) return '';
   return line
@@ -32,51 +32,123 @@ const highlightJSXLine = (line) => {
     .replace(/('react'|'framer-motion'|"course-card"|"card-title")/g, '<span class="code-string">$1</span>');
 };
 
-export const Scene5Walkthrough = ({ currentTime, isPlaying }) => {
-  const elapsed = currentTime - 240; // 0 to 60s
+export const Scene5Walkthrough = ({ sceneProgress, sectionIndex, isPlaying }) => {
   const lastCharRef = useRef(0);
 
-  // Character typing logic over first 35 seconds
-  const typingDuration = 35;
+  // Hook variables declared unconditionally at the top
   const totalChars = codeToType.length;
-  const charsToType = elapsed <= 0 ? 0 : Math.min(totalChars, Math.floor((elapsed / typingDuration) * totalChars));
+  const typingProgress = sectionIndex === 2 ? Math.min(1, sceneProgress / 0.8) : 1;
+  const charsToType = Math.floor(typingProgress * totalChars);
 
-  // Play mechanical keyboard clicking sounds dynamically in the browser
+  // Play keyboard sounds unconditionally
   useEffect(() => {
-    if (isPlaying && charsToType > lastCharRef.current && charsToType < totalChars) {
-      // play click sound occasionally
+    if (isPlaying && sectionIndex === 2 && charsToType > lastCharRef.current && charsToType < totalChars) {
       if (Math.random() > 0.4) {
         audioEngineInstance.playTypeClick();
       }
     }
     lastCharRef.current = charsToType;
-  }, [charsToType, isPlaying]);
+  }, [charsToType, isPlaying, totalChars, sectionIndex]);
+
+  // Early returns are safe now because all hooks have executed
+  // Section 1: Overview
+  if (sectionIndex === 1) {
+    return (
+      <div className="flex flex-col h-full bg-gradient-to-br from-bg-dark to-[#0a0d16] p-6 justify-center items-center text-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="glass-panel p-6 rounded-2xl border border-slate-800/80 max-w-sm shadow-xl"
+        >
+          <span className="text-[9px] uppercase tracking-widest font-bold bg-accent-cyan/20 text-accent-cyan px-2.5 py-1 rounded-full border border-accent-cyan/30 mb-3 inline-block">
+            Phase 4: Walkthrough
+          </span>
+          <h3 className="text-lg font-bold text-white mb-2">Coding UI Transitions</h3>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Writing declarative motion wrappers and spring presets to establish natural physical screen interactions.
+          </p>
+          <div className="w-full h-1 bg-slate-900 mt-4 rounded-full overflow-hidden">
+            <motion.div className="h-full bg-accent-cyan" style={{ width: `${sceneProgress * 100}%` }} />
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Section 5: Best Practices vs Pitfalls
+  if (sectionIndex === 5) {
+    return (
+      <div className="flex flex-col h-full bg-gradient-to-br from-bg-dark to-[#0a0d16] p-6 justify-center items-center">
+        <div className="w-full max-w-lg grid grid-cols-2 gap-4">
+          <div className="border border-red-500/20 bg-red-950/10 p-4 rounded-xl flex flex-col gap-2">
+            <div className="flex items-center gap-1.5 text-red-400 font-bold text-xs">
+              <XCircle className="w-4 h-4" />
+              <span>Legacy Pitfall</span>
+            </div>
+            <p className="text-[10px] text-slate-400 leading-normal">
+              Setting spring stiffness too high, causing cards to bounce excessively and wobble on hover, creating visual noise.
+            </p>
+          </div>
+          <div className="border border-green-500/20 bg-green-950/10 p-4 rounded-xl flex flex-col gap-2">
+            <div className="flex items-center gap-1.5 text-green-400 font-bold text-xs">
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Best Practice</span>
+            </div>
+            <p className="text-[10px] text-slate-400 leading-normal">
+              Designing well-damped spring curves (stiffness: 300, damping: 20) for smooth, subtle tactile feedback.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Section 6: Quiz
+  if (sectionIndex === 6) {
+    return (
+      <div className="flex flex-col h-full bg-gradient-to-br from-bg-dark to-[#0a0d16] p-6 justify-center items-center">
+        <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 max-w-md w-full shadow-2xl">
+          <span className="text-[9px] uppercase tracking-wider font-mono text-accent-cyan">Self-Assessment Quiz</span>
+          <h4 className="text-xs font-bold text-white mt-1.5 mb-3 leading-snug">
+            Question: What is the primary purpose of the AnimatePresence wrapper in Framer Motion?
+          </h4>
+          <div className="flex flex-col gap-2">
+            <div className="p-2.5 rounded border border-green-500/30 bg-green-950/20 text-[10px] text-green-300 font-semibold flex justify-between items-center">
+              <span>A) To allow components to animate before they are unmounted from the DOM</span>
+              <span>✅ Correct</span>
+            </div>
+            <div className="p-2.5 rounded border border-slate-900 bg-slate-950/40 text-[10px] text-slate-500 flex justify-between items-center">
+              <span>B) To compile Tailwind utility styles into static CSS sheets</span>
+              <span>❌</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const typedCode = codeToType.substring(0, charsToType);
   const codeLines = typedCode.split('\n');
 
-  // Fill up to 16 lines for editor formatting
   const formattedLines = [];
   for (let i = 0; i < 16; i++) {
     formattedLines.push(codeLines[i] || '');
   }
 
-  // Milestones for browser component rendering
-  const showCard1 = elapsed >= 15;
-  const showCard2 = elapsed >= 28;
-  const hoverCard1 = elapsed >= 40 && elapsed < 45;
-  const navigateToDetails = elapsed >= 45 && elapsed < 55;
+  // Browser render states
+  const showCard1 = sectionIndex >= 3 || (sectionIndex === 2 && sceneProgress >= 0.3);
+  const showCard2 = sectionIndex >= 3 || (sectionIndex === 2 && sceneProgress >= 0.6);
+  const hoverCard1 = sectionIndex === 3;
+  const navigateToDetails = sectionIndex === 4;
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-bg-dark to-[#0a0d16] p-4 justify-center relative overflow-hidden">
       
-      {/* Scene Title header */}
       <div className="mb-3">
         <span className="text-[10px] tracking-[0.2em] font-semibold text-accent-cyan uppercase">Walkthrough</span>
         <h2 className="text-lg font-bold text-white leading-tight">Implementation Walkthrough</h2>
       </div>
 
-      {/* Main Split Screen */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 h-76 min-h-0 items-stretch">
         
         {/* Left Side: VS Code Editor Panel */}
@@ -116,7 +188,6 @@ export const Scene5Walkthrough = ({ currentTime, isPlaying }) => {
               <div className="w-2 h-2 rounded-full bg-slate-700" />
               <div className="w-2 h-2 rounded-full bg-slate-700" />
             </div>
-            {/* Browser Address Input */}
             <div className="flex-1 bg-slate-900/60 rounded px-2 py-0.5 text-[9px] font-mono text-slate-400 flex items-center gap-1.5 border border-slate-850/40">
               <span className="w-1.5 h-1.5 rounded-full bg-accent-cyan" />
               <span>
@@ -173,7 +244,6 @@ export const Scene5Walkthrough = ({ currentTime, isPlaying }) => {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{
                           opacity: 1,
-                          y: 0,
                           scale: hoverCard1 ? 1.05 : 1,
                           y: hoverCard1 ? -4 : 0,
                         }}
@@ -214,7 +284,7 @@ export const Scene5Walkthrough = ({ currentTime, isPlaying }) => {
 
       {/* Floating highlights indicator overlay */}
       <AnimatePresence>
-        {elapsed >= 5 && elapsed < 30 && (
+        {sectionIndex === 2 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -224,7 +294,7 @@ export const Scene5Walkthrough = ({ currentTime, isPlaying }) => {
             💻 Writing Framer Motion Declarations
           </motion.div>
         )}
-        {elapsed >= 30 && elapsed < 55 && (
+        {sectionIndex === 3 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
