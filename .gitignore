@@ -1,81 +1,25 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-.venv/
-venv/
-ENV/
-.pytest_cache/
-.coverage
-htmlcov/
-
-# Node.js
-node_modules/
+# Logs
+logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
+pnpm-debug.log*
 lerna-debug.log*
-dist/
-out/
-.next/
-.nuxt/
-.cache/
-.revideo/
 
-# IDEs and Editors
-.vscode/
-.idea/
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
-*.swp
-*.swo
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Docker & Environment
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-docker-compose.override.yml
-
-# Temporary output and render cache files (but keep example directories)
-examples/sample-output/*.mp4
-examples/sample-output/*.wav
-examples/sample-output/*.png
-*.log
-
-# Video Rendering Temp files & outputs
-services/animation-service/output.mp4
-services/animation-service/public/assets/audio_*
-services/animation-service/public/assets/frames_*
-services/animation-service/public/outputs/*
-services/animation-service/public/assets/audio/
-services/animation-service/public/assets/final_audio_*
-services/animation-service/public/assets/final_video_*
-services/animation-service/templates/rag/output/
-
+*.sw?
+hybrid-video-lms/
