@@ -153,7 +153,12 @@ app.post('/api/generate-video', async (req, res) => {
         job.stage = 'Processing Audio Chunks for Lip Sync...';
         job.progress = 40;
         const chunksDir = path.join(jobDir, 'audio_chunks');
-        const audioChunks = await splitAudioIntoChunks(masterAudioPath, chunksDir, 20);
+        const chunkDuration = Number(process.env.CHUNK_DURATION || 20);
+        const audioChunks = await splitAudioIntoChunks(
+          masterAudioPath,
+          chunksDir,
+          chunkDuration
+        );
 
         // 3. Render Talking Head per Chunk
         const videoChunks = [];

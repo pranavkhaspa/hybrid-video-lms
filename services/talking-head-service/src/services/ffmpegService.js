@@ -20,9 +20,26 @@ export function getAudioDuration(filePath) {
  */
 export function splitAudioIntoChunks(audioPath, outputDir, chunkDurationSec = 20) {
   return new Promise(async (resolve, reject) => {
+    if (!audioPath) {
+      return reject(new Error("Audio path is required."));
+    }
+    if (!outputDir) {
+      return reject(new Error("Output directory is required."));
+    }
+
+    if (!fs.existsSync(audioPath)) {
+      return reject(new Error(`Audio file not found: ${audioPath}`));
+    }
+
+    if (chunkDurationSec <= 0) {
+      return reject(new Error("Chunk duration must be greater than zero."));
+    }
     try {
       const totalDuration = await getAudioDuration(audioPath);
       const numChunks = Math.ceil(totalDuration / chunkDurationSec);
+      console.log(`[FFmpeg] Audio Duration: ${totalDuration.toFixed(2)}s`);
+      console.log(`[FFmpeg] Chunk Duration: ${chunkDurationSec}s`);
+      console.log(`[FFmpeg] Number of Chunks: ${numChunks}`);
       const chunkPaths = [];
 
       await fs.ensureDir(outputDir);
@@ -30,12 +47,14 @@ export function splitAudioIntoChunks(audioPath, outputDir, chunkDurationSec = 20
       let completed = 0;
       if (numChunks <= 1) {
         // Return single audio file
+        console.log('[FFmpeg] Audio is short enough. No chunking required.');
         return resolve([audioPath]);
       }
 
       for (let i = 0; i < numChunks; i++) {
         const startTime = i * chunkDurationSec;
         const chunkPath = path.join(outputDir, `chunk_${i}.mp3`);
+        console.log(`[FFmpeg] Creating chunk ${i + 1}/${numChunks}`);
         chunkPaths.push(chunkPath);
 
         ffmpeg(audioPath)
@@ -43,8 +62,12 @@ export function splitAudioIntoChunks(audioPath, outputDir, chunkDurationSec = 20
           .setDuration(chunkDurationSec)
           .output(chunkPath)
           .on('end', () => {
+            console.log(`[FFmpeg] Finished chunk ${i + 1}/${numChunks}`);
             completed++;
             if (completed === numChunks) {
+              console.log(
+                `[FFmpeg] Successfully generated ${chunkPaths.length} audio chunk(s).`
+              );
               resolve(chunkPaths);
             }
           })
@@ -108,3 +131,5 @@ export function concatenateVideos(videoPaths, masterAudioPath, outputPath) {
       .run();
   });
 }
+
+
