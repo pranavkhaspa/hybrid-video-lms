@@ -54,12 +54,23 @@ export function splitAudioIntoChunks(audioPath, outputDir, chunkDurationSec = 20
       for (let i = 0; i < numChunks; i++) {
         const startTime = i * chunkDurationSec;
         const chunkPath = path.join(outputDir, `chunk_${i}.mp3`);
+        const audioFilter = process.env.AUDIO_FILTER || 'loudnorm';
+        const audioBitrate = process.env.AUDIO_BITRATE || '192k';
+        const sampleRate = Number(process.env.AUDIO_SAMPLE_RATE || 44100);
+
         console.log(`[FFmpeg] Creating chunk ${i + 1}/${numChunks}`);
+        console.log(`[FFmpeg] Audio Filter: ${audioFilter}`);
+        console.log(`[FFmpeg] Audio Bitrate: ${audioBitrate}`);
+        console.log(`[FFmpeg] Sample Rate: ${sampleRate}`);
+        
         chunkPaths.push(chunkPath);
 
         ffmpeg(audioPath)
           .setStartTime(startTime)
           .setDuration(chunkDurationSec)
+          .audioFilters(audioFilter)
+          .audioBitrate(audioBitrate)
+          .audioFrequency(sampleRate)
           .output(chunkPath)
           .on('end', () => {
             console.log(`[FFmpeg] Finished chunk ${i + 1}/${numChunks}`);
