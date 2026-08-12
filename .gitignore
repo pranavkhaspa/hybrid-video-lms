@@ -106,4 +106,6 @@ services/animation-service/public/assets/step_*.wav
 
 .vercel
 .env*
+# Talking Head Service runtime files
+services/talking-head-service/storage/
 
