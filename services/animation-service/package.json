@@ -15,10 +15,14 @@
   },
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
     "express": "^4.19.2"
   },
   "devDependencies": {
     "@revideo/2d": "0.10.4",
+    "@revideo/cli": "^0.11.0",
+    "@revideo/core": "0.10.4",
+    "@revideo/renderer": "^0.11.0",
     "@revideo/cli": "0.10.4",
     "@revideo/core": "0.10.4",
     "@revideo/renderer": "0.10.4",
