@@ -10,7 +10,9 @@ import { generateScriptAndPrompt } from './services/scriptService.js';
 import { generateTTSAudio, VOICES } from './services/ttsService.js';
 import { generateAvatarImage } from './services/avatarService.js';
 import { renderTalkingHeadChunk } from './services/videoService.js';
-import { splitAudioIntoChunks, concatenateVideos, getAudioDuration } from './services/ffmpegService.js';
+import {
+  splitAudioIntoChunks, concatenateVideos, getAudioDuration, validateAndNormalizeAudio
+} from './services/ffmpegService.js';
 
 dotenv.config();
 
@@ -87,7 +89,7 @@ app.post('/api/generate-avatar', async (req, res) => {
     const outputPath = path.join(TMP_DIR, filename);
 
     await generateAvatarImage(prompt, outputPath);
-    
+
     res.json({ success: true, imagePath: outputPath, filename });
   } catch (err) {
     console.error('[API] Avatar generation error:', err);
@@ -143,24 +145,33 @@ app.post('/api/generate-video', async (req, res) => {
       try {
         const job = JOBS.get(jobId);
         const masterAudioPath = path.join(jobDir, 'master_audio.mp3');
+        const normalizedAudioPath = path.join(jobDir, 'normalized_audio.mp3');
 
         // 1. Generate Full Audio Script
         job.stage = 'Synthesizing Audio Narration...';
         job.progress = 20;
         await generateTTSAudio(scriptText, masterAudioPath, voice);
+        // 2. Validate and Normalize Audio
+        job.stage = 'Validating and Normalizing Audio...';
+        job.progress = 30;
 
-        // 2. Audio Chunker (Split into ~20s sub-clips)
+        await validateAndNormalizeAudio(
+          masterAudioPath,
+          normalizedAudioPath
+        );
+
+        // 3. Audio Chunker (Split into ~20s sub-clips)
         job.stage = 'Processing Audio Chunks for Lip Sync...';
         job.progress = 40;
         const chunksDir = path.join(jobDir, 'audio_chunks');
         const chunkDuration = Number(process.env.CHUNK_DURATION || 20);
         const audioChunks = await splitAudioIntoChunks(
-          masterAudioPath,
+          normalizedAudioPath,
           chunksDir,
           chunkDuration
         );
 
-        // 3. Render Talking Head per Chunk
+        // 4. Render Talking Head per Chunk
         const videoChunks = [];
         const totalChunks = audioChunks.length;
 
@@ -182,14 +193,14 @@ app.post('/api/generate-video', async (req, res) => {
           videoChunks.push(chunkVideoOut);
         }
 
-        // 4. Concatenate Video Clips & Merge Master Audio
+        // 5. Concatenate Video Clips & Merge Master Audio
         job.stage = 'Stitching Master Video & Audio Tracks...';
         job.progress = 90;
 
         const finalFilename = `talking_head_${jobId}.mp4`;
         const finalOutputPath = path.join(OUTPUT_DIR, finalFilename);
 
-        await concatenateVideos(videoChunks, masterAudioPath, finalOutputPath);
+        await concatenateVideos(videoChunks, normalizedAudioPath, finalOutputPath);
 
         job.status = 'completed';
         job.stage = 'Video Render Complete!';
