@@ -1,9 +1,14 @@
+import os
+import shutil
+import subprocess
+import tempfile
 import uuid
 from datetime import datetime
 from typing import Dict, Optional
 
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
+from src.ffmpeg_service import concatenate_videos
 
 app = FastAPI(
     title="AI Talking Head Service",
@@ -25,10 +30,50 @@ class JobStatusResponse(BaseModel):
     output_url: Optional[str] = None
 
 
-def dummy_rendering_task(job_id: str):
-    # This is a placeholder task simulation
+def rendering_task(job_id: str, audio_path: str):
     jobs_db[job_id]["status"] = "rendering"
-    jobs_db[job_id]["progress"] = 50.0
+    jobs_db[job_id]["progress"] = 10.0
+
+    try:
+        # Simulate latentsync avatar generation creating a silent video clip
+        silent_video = os.path.join(tempfile.gettempdir(), f"{job_id}_silent.mp4")
+
+        # Create a dummy silent video using ffmpeg from a black screen (just for demonstration)
+        subprocess.run(
+            [
+                "ffmpeg",
+                "-y",
+                "-f",
+                "lavfi",
+                "-i",
+                "color=c=black:s=1920x1080:r=25:d=5",
+                "-c:v",
+                "libx264",
+                silent_video,
+            ],
+            check=True,
+            capture_output=True,
+        )
+
+        jobs_db[job_id]["progress"] = 50.0
+
+        output_path = os.path.join(tempfile.gettempdir(), f"{job_id}_final.mp4")
+
+        # Call our new ffmpeg service to multiplex the audio and optimize the output
+        concatenate_videos([silent_video], audio_path, output_path)
+
+        jobs_db[job_id]["status"] = "completed"
+        jobs_db[job_id]["progress"] = 100.0
+        jobs_db[job_id]["output_url"] = f"/outputs/{os.path.basename(output_path)}"
+        jobs_db[job_id]["completed_at"] = datetime.utcnow().isoformat() + "Z"
+
+    except Exception as e:
+        jobs_db[job_id]["status"] = "failed"
+
+    finally:
+        # Cleanup temp audio
+        if os.path.exists(audio_path):
+            os.remove(audio_path)
 
 
 @app.get("/")
@@ -57,8 +102,14 @@ def generate_avatar(
         "output_url": None,
     }
 
-    # Trigger background work simulation
-    background_tasks.add_task(dummy_rendering_task, job_id)
+    # Save uploaded audio to temp directory
+    temp_dir = tempfile.gettempdir()
+    audio_path = os.path.join(temp_dir, f"{job_id}_{audio.filename}")
+    with open(audio_path, "wb") as buffer:
+        shutil.copyfileobj(audio.file, buffer)
+
+    # Trigger background work with actual logic
+    background_tasks.add_task(rendering_task, job_id, audio_path)
 
     return {
         "job_id": job_id,
